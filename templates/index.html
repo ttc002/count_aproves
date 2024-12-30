@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Статистика заявок</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        p {
+            font-size: 16px;
+            color: #555;
+        }
+        form {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .statistic {
+            background-color: white;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Статистика заявок</h1>
+
+    <div class="statistic">
+        <h2>Дневная статистика</h2>
+        <p>Одобрения: {{ stats['daily']['approvals'] }}</p>
+        <p>Отказы: {{ stats['daily']['denials'] }}</p>
+        <p>Сумма: {{ stats['daily']['total'] }}</p>
+        <p>Процент отказов: {{ stats['daily']['denial_percentage'] | default(0) | round(2) }}%</p>
+        <form action="{{ url_for('approve') }}" method="post">
+            <button type="submit">Одобрить</button>
+        </form>
+        <form action="{{ url_for('deny') }}" method="post">
+            <button type="submit" style="background-color: #dc3545;">Отклонить</button>        
+        </form>
+    </div>
+
+    <div class="statistic">
+        <h2>Общая статистика за месяц</h2>
+        <p>Общие одобрения: {{ stats['monthly']['total_approvals'] }}</p>
+        <p>Общие отказы: {{ stats['monthly']['total_denials'] }}</p>
+        <p>Процент отказов: {{ stats['monthly']['denial_percentage'] | default(0) | round(2) }}%</p>
+
+        <form action="{{ url_for('submit_daily') }}" method="post">
+            <button type="submit">Сохранить дневные данные</button>
+        </form>
+    </div>
+</body>
+</html>
