@@ -40,6 +40,9 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
+        .delete {
+
+        }
     </style>
 </head>
 <body>
@@ -68,6 +71,9 @@
         <form action="{{ url_for('submit_daily') }}" method="post">
             <button type="submit">Сохранить дневные данные</button>
         </form>
+    </div>
+    <div class = "delete">
+        <button onclick = "document.location='delete'" style="background-color: #dc3545;"> Удалить</button>
     </div>
 </body>
 </html>

@@ -1,7 +1,6 @@
 from flask import Flask, request, redirect, url_for, render_template
 import json
 import os
-import threading
 from multiprocessing import Process
 app = Flask(__name__)
 delete = Flask(__name__)
@@ -95,7 +94,7 @@ def load_data():
     return {}
 
 # Удаление всех данных из stats.json
-@delete.route('/delete_data', methods=['GET', 'POST'])
+@app.route('/delete_data', methods=['GET', 'POST'])
 def delete_data():
     if request.method == 'POST':
         # Удаляем файл stats.json
@@ -106,8 +105,8 @@ def delete_data():
     return render_template('delete.html')
 
 # Не забудьте также добавить маршрут для главной страницы
-@delete.route('/', methods=['GET'])
-def index():
+@app.route('/delete', methods=['GET'])
+def index2():
     stats = load_data()
     return render_template('delete.html', stats=stats)
 

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">    
     <title>Удаление данных</title>
@@ -29,7 +30,7 @@
     </style>
 </head>
 <body>
-    <h1>Удаление данных из stats.json</h1>
+    <h1>Вы уверены, что хотите удалить всю статистику?</h1>
     <form action="{{ url_for('delete_data') }}" method="post">
         <button type="submit">Удалить все данные</button>
     </form>
