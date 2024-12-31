@@ -3,7 +3,6 @@ import json
 import os
 from multiprocessing import Process
 app = Flask(__name__)
-delete = Flask(__name__)
 # Путь к файлу для хранения статистики
 stats_file_path = 'stats.json'
 
@@ -111,14 +110,8 @@ def index2():
     return render_template('delete.html', stats=stats)
 
 if __name__ == '__main__':
-    def counter_main():
-        app.run(port=5000,host='0.0.0.0')
-    def deleter():
-        delete.run(port=5001,host='0.0.0.0')
-    t2 = Process(target=deleter)
-    t2.start()
-    t2 = Process(target=counter_main)
-    t2.start()
+    app.run(port=5000,host='0.0.0.0')
+
 
 
     
