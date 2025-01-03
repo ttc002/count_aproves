@@ -33,6 +33,9 @@
         button:hover {
             background-color: #218838;
         }
+        H1 SPAN {
+ 
+        }
         .statistic {
             background-color: white;
             border-radius: 5px;
@@ -55,10 +58,10 @@
         <p>Сумма: {{ stats['daily']['total'] }}</p>
         <p>Процент отказов: {{ stats['daily']['denial_percentage'] | default(0) | round(2) }}%</p>
         <form action="{{ url_for('approve') }}" method="post">
-            <button type="submit">Одобрить</button>
+            <button type="submit" style = "font-size: 24px;width: 49%">    +    </button>
         </form>
         <form action="{{ url_for('deny') }}" method="post">
-            <button type="submit" style="background-color: #dc3545;">Отклонить</button>        
+            <button type="submit" style="background-color: #dc3545;position: relative;right: -52%;bottom: 2.82em;font-size: 24px;width: 49%">    -    </button>        
         </form>
     </div>
 
