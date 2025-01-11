@@ -1,30 +1,36 @@
 from flask import Flask, request, redirect, url_for, render_template
 import json
 import os
-from multiprocessing import Process
+import datetime
+
 app = Flask(__name__)
-# Путь к файлу для хранения статистики
 stats_file_path = 'stats.json'
 
 def load_stats():
     """Загрузка статистики из файла JSON."""
     if os.path.exists(stats_file_path):
         with open(stats_file_path, 'r') as f:
-            return json.load(f)
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                data = {}  # Если файл пуст или повреждён, используем пустой словарь
     else:
-        return {
-            'daily': {
-                'approvals': 0,
-                'denials': 0,
-                'total': 0,
-                'denial_percentage': 0.0,  # Процент отказов
-            },
-            'monthly': {
-                'total_approvals': 0,
-                'total_denials': 0,
-                'denial_percentage': 0.0,  # Процент отказов
-            }
-        }
+        data = {}
+
+    # Убедимся, что все ключи присутствуют
+    data.setdefault("daily", {
+        "approvals": 0,
+        "denials": 0,
+        "total": 0,
+        "denial_percentage": 0.0
+    })
+    data.setdefault("monthly", {
+        "total_approvals": 0,
+        "total_denials": 0,
+        "denial_percentage": 0.0
+    })
+    return data
+
 
 def calculate_denial_percentage(approvals, denials):
     """Расчет процента отказов."""
@@ -36,9 +42,8 @@ def calculate_denial_percentage(approvals, denials):
 def save_stats(stats):
     """Сохранение статистики в файл JSON."""
     with open(stats_file_path, 'w') as f:
-        json.dump(stats, f)
+        json.dump(stats, f, indent=4)
 
-# Начальные данные статистики
 stats = load_stats()
 
 @app.route('/')
@@ -48,70 +53,78 @@ def index():
 
 @app.route('/approve', methods=['POST'])
 def approve():
+    stats = load_stats()
     stats['daily']['approvals'] += 1
     stats['daily']['total'] = stats['daily']['approvals'] + stats['daily']['denials']
     stats['daily']['denial_percentage'] = calculate_denial_percentage(stats['daily']['approvals'], stats['daily']['denials'])
-    
-    save_stats(stats)  # Сохраняем данные после обновления
+    stats['daily']['last_approval_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    save_stats(stats)
     return redirect(url_for('index'))
 
 @app.route('/deny', methods=['POST'])
 def deny():
+    stats = load_stats()
     stats['daily']['denials'] += 1
     stats['daily']['total'] = stats['daily']['approvals'] + stats['daily']['denials']
     stats['daily']['denial_percentage'] = calculate_denial_percentage(stats['daily']['approvals'], stats['daily']['denials'])
-    
-    save_stats(stats)  # Сохраняем данные после обновления
+    stats['daily']['last_denial_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    save_stats(stats)
     return redirect(url_for('index'))
+
+
+@app.route('/cancel_last/<action>', methods=['POST'])
+def cancel_last(action):
+    stats = load_stats()
+    if action == 'approval' and stats['daily']['approvals'] > 0:
+        stats['daily']['approvals'] -= 1
+    elif action == 'denial' and stats['daily']['denials'] > 0:
+        stats['daily']['denials'] -= 1
+    stats['daily']['total'] = stats['daily']['approvals'] + stats['daily']['denials']
+    stats['daily']['denial_percentage'] = calculate_denial_percentage(stats['daily']['approvals'], stats['daily']['denials'])
+    save_stats(stats)
+    return redirect(url_for('index'))
+
 
 @app.route('/submit_daily', methods=['POST'])
 def submit_daily():
-    # Сохраняем дневные данные в месячную статистику только по нажатию кнопки
+    """Добавляет дневные данные в общую статистику и сбрасывает дневную."""
+    stats = load_stats()
+    
+    # Добавляем запись в массив entries
+    stats.setdefault('monthly', {}).setdefault('entries', [])
+    stats['monthly']['entries'].append({
+        "timestamp": datetime.datetime.now().isoformat(),
+        "approvals": stats['daily']['approvals'],
+        "denials": stats['daily']['denials'],
+        "denial_percentage": calculate_denial_percentage(
+            stats['daily']['approvals'], stats['daily']['denials']
+        )
+    })
+
+    # Обновляем общую статистику
     stats['monthly']['total_approvals'] += stats['daily']['approvals']
     stats['monthly']['total_denials'] += stats['daily']['denials']
-    
-    # Обновляем процент отказов в месячной статистике
-    stats['monthly']['denial_percentage'] = calculate_denial_percentage(stats['monthly']['total_approvals'], stats['monthly']['total_denials'])
+    stats['monthly']['denial_percentage'] = calculate_denial_percentage(
+        stats['monthly']['total_approvals'], stats['monthly']['total_denials']
+    )
 
-    # Сбрасываем дневные данные
-    stats['daily']['approvals'] = 0
-    stats['daily']['denials'] = 0
-    stats['daily']['total'] = 0
-    stats['daily']['denial_percentage'] = 0.0  # Сброс процента
-
-    save_stats(stats)  # Сохраняем данные после сброса
+    # Сбрасываем дневную статистику
+    stats['daily'] = {
+        "approvals": 0,
+        "denials": 0,
+        "total": 0,
+        "denial_percentage": 0.0
+    }
+    save_stats(stats)
     return redirect(url_for('index'))
 
 
-
-
-
-def load_data():
-    if os.path.exists('stats.json'):
-        with open('stats.json', 'r') as f:
-            return json.load(f)
-    return {}
-
-# Удаление всех данных из stats.json
-@app.route('/delete_data', methods=['GET', 'POST'])
+@app.route('/delete_data', methods=['POST'])
 def delete_data():
-    if request.method == 'POST':
-        # Удаляем файл stats.json
-        if os.path.exists('stats.json'):
-            print("aaa")
-            os.remove('stats.json')
-        return redirect(url_for('index'))  # Перенаправляем на главную страницу после удаления
-    return render_template('delete.html')
-
-# Не забудьте также добавить маршрут для главной страницы
-@app.route('/delete', methods=['GET'])
-def index2():
-    stats = load_data()
-    return render_template('delete.html', stats=stats)
+    """Удаляет все данные статистики."""
+    if os.path.exists(stats_file_path):
+        os.remove(stats_file_path)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(port=80,host='0.0.0.0')
-
-
-
-    
+    app.run(port=5000, host='0.0.0.0')
