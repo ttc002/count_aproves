@@ -1,0 +1,7 @@
+services:
+  count-aproves:
+    build: .
+    container_name: aprove-counter
+    ports:
+      - "5000:5000"
+    restart: always
